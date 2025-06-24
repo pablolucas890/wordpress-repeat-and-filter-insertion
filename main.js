@@ -85,16 +85,26 @@ document.addEventListener("DOMContentLoaded", async function () {
   opt.textContent = "Selecionar estilo";
   select.appendChild(opt);
 
+  let arrayEstilos = []
   const estilosUnicos = [...new Set(musicas.map(m => m.estilo.toUpperCase()))];
   estilosUnicos.forEach(estilo => {
-    const estiloSplited = estilo.split('/')
+    const estiloSplited = [];
+    estilo.split('/').forEach((el) => {
+      el.split(',').forEach((el2) => {
+        estiloSplited.push(el2)
+      })
+    })
     estiloSplited.forEach(v => {
       const opt = document.createElement("option");
-      opt.value = v.trim();
-      opt.textContent = v.trim();
+      const formated = v.trim()
+      if (!arrayEstilos.some(el => el === formated))
+        arrayEstilos.push(formated)
+      opt.value = formated;
+      opt.textContent = formated;
       select.appendChild(opt);
     })
   });
+  arrayEstilos = arrayEstilos.sort()
 
   const botaoFiltrar = document.createElement("button");
   botaoFiltrar.textContent = "Filtrar";
@@ -147,7 +157,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     select.style.color = '#475569'
     select.style.fontWeight = 400;
     select.style.borderColor = '#475569';
-    renderizarMusicas(containerPrincipal, filtradas, listaMusicas);
+    renderizarMusicas(arrayEstilos, containerPrincipal, filtradas, listaMusicas);
   });
 
   containerPrincipal.appendChild(filtroWrapper);
@@ -158,7 +168,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     inputSearchText.value = ""
     const estiloSelecionado = select.value;
     const filtradas = musicas.filter(m => m.estilo.toLowerCase().includes(estiloSelecionado.toLowerCase()) && m.momento.includes(selected));
-    renderizarMusicas(containerPrincipal, filtradas, listaMusicas);
+    renderizarMusicas(arrayEstilos, containerPrincipal, filtradas, listaMusicas);
   });
 
   botaoReset.addEventListener("click", () => {
@@ -169,7 +179,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     select.style.color = '#475569'
     select.style.fontWeight = 400;
     select.style.borderColor = '#475569';
-    renderizarMusicas(containerPrincipal, musicas, listaMusicas);
+    renderizarMusicas(arrayEstilos, containerPrincipal, musicas, listaMusicas);
   });
 
   // Container de Lista de Musicas e Momentos
@@ -211,7 +221,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   criaBotaoMomento(botaoFiltrar, momentDiv, "ACLAMAÇÃO AO EVANGELHO", "aclamacao_evangelio.jpg", "aclamacao_evangelho")
   criaBotaoMomento(botaoFiltrar, momentDiv, "ORAÇÃO", "oracao.jpg", "oracao")
 
-  renderizarMusicas(containerPrincipal, musicas, listaMusicas);
+  renderizarMusicas(arrayEstilos, containerPrincipal, musicas, listaMusicas);
 
   // Get another musics
   const buttons = momentDiv.children
@@ -220,17 +230,69 @@ document.addEventListener("DOMContentLoaded", async function () {
   musicasArray = await getMusicasArray(segundosTabs, sheet2JsonUrl, sheet)
   musicas = [...musicas, ...getMusicasfromArray(musicasArray)]
   Array.from(buttons).slice(0, limitLoading2).map(el => { el.className = '' })
-  renderizarMusicas(containerPrincipal, musicas, listaMusicas);
+  renderizarMusicas(arrayEstilos, containerPrincipal, musicas, listaMusicas);
 
   musicasArray = await getMusicasArray(terceirosTabs, sheet2JsonUrl, sheet)
   musicas = [...musicas, ...getMusicasfromArray(musicasArray)]
   Array.from(buttons).slice(limitLoading2).map(el => { el.className = '' })
-  renderizarMusicas(containerPrincipal, musicas, listaMusicas);
+  renderizarMusicas(arrayEstilos, containerPrincipal, musicas, listaMusicas);
 
 });
 
-function renderizarMusicas(containerPrincipal, lista, listaMusicas, paginaAtual = 1, itensPorPagina = 14) {
+function renderizarMusicas(arrayEstilos, containerPrincipal, lista, listaMusicas, paginaAtual = 1, itensPorPagina = 14) {
   listaMusicas.innerHTML = "";
+  const paletaDeCores = [
+    "#F5BD50",
+    "#FFB100",
+    "#D28E00",
+    "#FFC300",
+    "#E68A00",
+    "#CC7000",
+    "#FF8C00",
+    "#FFA500",
+    "#A64B00",
+    "#804000",
+    "#00467a",
+    "#005B99",
+    "#0077CC",
+    "#3399FF",
+    "#66B2FF",
+    "#0F1C2E",
+    "#37474F",
+    "#455A64",
+    "#607D8B",
+    "#78909C",
+    "#8D6E63",
+    "#A1887F",
+    "#D84315",
+    "#E64A19",
+    "#C62828",
+    "#AD1457",
+    "#6A1B9A",
+    "#4527A0",
+    "#283593",
+    "#1A237E",
+    "#FF7043",
+    "#FF5722",
+    "#FF9800",
+    "#F57C00",
+    "#FFB74D",
+    "#FFD54F",
+    "#D4E157",
+    "#9CCC65",
+    "#7CB342",
+    "#558B2F",
+    "#33691E",
+    "#1B5E20",
+    "#00ACC1",
+    "#00838F",
+    "#006064",
+    "#263238",
+    "#212121",
+    "#424242",
+    "#616161",
+    "#757575"
+  ];
 
   if (!lista) return
 
@@ -267,6 +329,8 @@ function renderizarMusicas(containerPrincipal, lista, listaMusicas, paginaAtual 
     const defaultMusicUrl = imagens[index];
     item.className = "musica-card";
 
+    let indexEstilo = arrayEstilos.indexOf(musica.estilo.toUpperCase())
+    indexEstilo = indexEstilo > 50 ? 0 : indexEstilo
     item.innerHTML = `
       <img src="${musica.imagem || defaultMusicUrl}" alt="${musica.nome}" class="img-${index}">
       <div class="info">
@@ -275,7 +339,7 @@ function renderizarMusicas(containerPrincipal, lista, listaMusicas, paginaAtual 
         <p><strong>Tags:</strong> ${musica.artista}</p>
         <p><strong>Sugestão:</strong> ${getMomentText(musica.momento).toLowerCase()}</p>
         <div class="botoes">
-          <span class="estilo-tag">${musica.estilo}</span>
+          <span class="estilo-tag" style="background-color: ${paletaDeCores[indexEstilo]};">${musica.estilo}</span>
           ${musica?.video ? '<a href="' + musica.video + '" target="_blank">Assistir</a>' : ''}
         </div>
       </div>
@@ -294,7 +358,7 @@ function renderizarMusicas(containerPrincipal, lista, listaMusicas, paginaAtual 
     botao.className = "botao-pagina";
     if (ativo) botao.classList.add("ativo");
     botao.addEventListener("click", () => {
-      renderizarMusicas(containerPrincipal, lista, listaMusicas, pagina, itensPorPagina);
+      renderizarMusicas(arrayEstilos, containerPrincipal, lista, listaMusicas, pagina, itensPorPagina);
     });
     paginacao.appendChild(botao);
   }
