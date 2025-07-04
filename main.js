@@ -376,7 +376,7 @@ function criaBotaoMomento(botaoFiltrar, momentDiv, txt, img, id) {
 function getMusicasfromArray(musicasArray) {
   // TODO: get image from api
   return musicasArray
-    .map(m => ({ nome: m?.[0], momento: m?.[8], descricao: m?.[1], estilo: m?.[2], artista: m?.[4], video: m?.[5] || '', imagem: '' }))
+    .map(m => ({ nome: m?.[0], momento: m?.[8], descricao: m?.[1], estilo: m?.[2], artista: m?.[4], video: m?.[5] || '', imagem: m?.[9] || '' }))
     .filter((m) => m.nome && m.momento && m.descricao && m.estilo && m.artista)
 }
 
