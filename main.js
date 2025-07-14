@@ -224,12 +224,14 @@ document.addEventListener("DOMContentLoaded", async function () {
   Array.from(buttons).slice(limitLoading1).map(el => { el.className = 'loading' })
 
   musicasArray = await getMusicasArray(segundosTabs, sheet2JsonUrl, sheet)
-  musicas = [...musicas, ...getMusicasfromArray(musicasArray)]
+  let newMusicas = getMusicasfromArray(musicasArray)
+  musicas = [...musicas, ...newMusicas]
   Array.from(buttons).slice(0, limitLoading2).map(el => { el.className = '' })
   renderizarMusicas(arrayEstilos, containerPrincipal, musicas, listaMusicas);
 
   musicasArray = await getMusicasArray(terceirosTabs, sheet2JsonUrl, sheet)
-  musicas = [...musicas, ...getMusicasfromArray(musicasArray)]
+  newMusicas = getMusicasfromArray(musicasArray)
+  musicas = [...musicas, ...newMusicas]
   Array.from(buttons).slice(limitLoading2).map(el => { el.className = '' })
   renderizarMusicas(arrayEstilos, containerPrincipal, musicas, listaMusicas);
 
@@ -237,18 +239,18 @@ document.addEventListener("DOMContentLoaded", async function () {
 
 function renderizarMusicas(arrayEstilos, containerPrincipal, lista, listaMusicas, paginaAtual = 1, itensPorPagina = 14) {
   listaMusicas.innerHTML = "";
-const paletaDeCores = [
-  "#1B5E20", "#D84315", "#006064", "#6A1B9A", "#A64B00",
-  "#263238", "#0077CC", "#AD1457", "#424242", "#00467a",
-  "#FF5722", "#C62828", "#558B2F", "#0F1C2E", "#FF7043",
-  "#00838F", "#283593", "#8D6E63", "#212121", "#A1887F",
-  "#4527A0", "#005B99", "#9CCC65", "#607D8B", "#D28E00",
-  "#1A237E", "#FF9800", "#CC7000", "#37474F", "#E64A19",
-  "#78909C", "#FF8C00", "#33691E", "#757575", "#F57C00",
-  "#3399FF", "#A64B00", "#FFB100", "#558B2F", "#FFB74D",
-  "#AD1457", "#66B2FF", "#D4E157", "#0077CC", "#F5BD50",
-  "#C62828", "#283593", "#607D8B", "#263238", "#00467a"
-];
+  const paletaDeCores = [
+    "#1B5E20", "#D84315", "#006064", "#6A1B9A", "#A64B00",
+    "#263238", "#0077CC", "#AD1457", "#424242", "#00467a",
+    "#FF5722", "#C62828", "#558B2F", "#0F1C2E", "#FF7043",
+    "#00838F", "#283593", "#8D6E63", "#212121", "#A1887F",
+    "#4527A0", "#005B99", "#9CCC65", "#607D8B", "#D28E00",
+    "#1A237E", "#FF9800", "#CC7000", "#37474F", "#E64A19",
+    "#78909C", "#FF8C00", "#33691E", "#757575", "#F57C00",
+    "#3399FF", "#A64B00", "#FFB100", "#558B2F", "#FFB74D",
+    "#AD1457", "#66B2FF", "#D4E157", "#0077CC", "#F5BD50",
+    "#C62828", "#283593", "#607D8B", "#263238", "#00467a"
+  ];
 
 
   if (!lista) return
@@ -376,8 +378,18 @@ function criaBotaoMomento(botaoFiltrar, momentDiv, txt, img, id) {
 function getMusicasfromArray(musicasArray) {
   // TODO: get image from api
   return musicasArray
-    .map(m => ({ nome: m?.[0], momento: m?.[8], descricao: m?.[1], estilo: m?.[2], artista: m?.[4], video: m?.[5] || '', imagem: m?.[9] || '' }))
+    .map(m => {
+      const lastIndex = m.length - 1
+      return {
+        nome: m?.[0], momento: m?.[lastIndex], descricao: m?.[1], estilo: m?.[2], artista: m?.[4],
+        video: m?.[5] || '', imagem: imageIsValid(m?.[lastIndex - 1]) ? m?.[lastIndex - 1] : ''
+      }
+    })
     .filter((m) => m.nome && m.momento && m.descricao && m.estilo && m.artista)
+}
+
+function imageIsValid(image) {
+  return image && image.startsWith('https://institutomusicaldanilomenezes.com')
 }
 
 async function getMusicasArray(tabs, sheet2JsonUrl, sheet) {
