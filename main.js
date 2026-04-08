@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     'Aclamação ao Evangelho': 'aclamacao_evangelho',
     'Oração': 'oracao'
   }
-  const apiMusics = await fetch('http://app.institutomusicaldanilomenezes.com/api/musics').then(res => res.json());
+  const apiMusics = await fetch('https://app.institutomusicaldanilomenezes.com/api/musics').then(res => res.json());
   const musicas = []
   for (const m of apiMusics?.data) {
     const popularMoment = m?.popular_moment?.split(',') || [];
@@ -54,9 +54,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           artista: m.tags,
           video: m.lead_link,
           imagem: m.photo ?
-            null
-            // TODO: Adicionar a imagem da música
-            // `http://app.institutomusicaldanilomenezes.com/api/musics/${m.id}/photo` 
+            `https://app.institutomusicaldanilomenezes.com/api/musics/${m.id}/photo` 
             : null
         });
       }
