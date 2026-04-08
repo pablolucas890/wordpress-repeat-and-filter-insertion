@@ -1,142 +1,72 @@
 document.addEventListener("DOMContentLoaded", async function () {
-  // consts
-  const limitLoading1 = 5;
-  const limitLoading2 = 10;
-
   // Container principal
   const titleElement = document.getElementById("title");
   if (!titleElement) return;
-
   const containerPrincipal = document.createElement("div");
   containerPrincipal.id = "playlist-container";
-
   titleElement.insertAdjacentElement("afterend", containerPrincipal);
 
-  // Loading
+  // Loading inicial
   const loading = document.createElement("div");
   loading.className = "loading-visible";
-
   const spinner = document.createElement("div");
   spinner.className = "spinner";
-
   const loadingText = document.createElement("h3");
   loadingText.textContent = "Carregando Músicas...";
-
   loading.appendChild(spinner);
   loading.appendChild(loadingText);
-
   containerPrincipal.appendChild(loading);
 
-  // Musicas
-  const sheet = 'https://docs.google.com/spreadsheets/d/1Xr3zBjYQYFV9ACutlksbecSY3T5fWnkQAHGoob5juLo/edit'
-  const sheet2JsonUrl = 'https://api.sheets2json.com/v1/doc/?url='
-  const corsProxy = 'https://api.allorigins.win/raw?url='
-  let musicasArray = []
 
-  function delay() {
-    return new Promise(resolve => setTimeout(resolve, 500));
+  // Busca e criação das músicas
+  const tabs = {
+    'Entrada do noivo': 'entrada_noivo',
+    'Entrada dos pais': 'entrada_pais',
+    'Entrada da noiva': 'entrada_noiva',
+    'Entrada das alianças': 'entrada_aliancas',
+    'Entrada dos padrinhos': 'entrada_padrinhos',
+    'Entrada de plaquinha ou florist': 'floristas',
+    'comunhão': 'comunhao',
+    'Beijo': 'beijo',
+    'Assinaturas': 'assinatura',
+    'Saida': 'saida',
+    'Cumprimentos': 'cumprimentos',
+    'Entrada da Biblia': 'entrada_biblia',
+    'Salmo': 'salmo',
+    'Santa Ceia': 'santa_ceia',
+    'Entrada da sagrada familia': 'entrada_sagrada_familia',
+    'Homenagem a falecido': 'homenagem_falecido',
+    'Entrada de nossa senhora': 'entrada_nossa_senhora',
+    'Aclamação ao Evangelho': 'aclamacao_evangelho',
+    'Oração': 'oracao'
   }
-
-  async function fetchWithCors(url, timeout = 60000) {
-    console.log('[PRIMEIROS TABS] Requisição para:', url);
-    const proxiedUrl = corsProxy + encodeURIComponent(url);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-    
-    try {
-      const response = await fetch(proxiedUrl, {
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        // Log simples de erro, sem detalhes
-        console.log('[PRIMEIROS TABS] Erro HTTP na URL:', url);
-        return [];
-      }
-      
-      const responseText = await response.text();
-      try {
-        const data = JSON.parse(responseText);
-        console.log('[PRIMEIROS TABS] Sucesso. Itens recebidos:', data.length, 'URL:', url);
-        return data;
-      } catch (parseError) {
-        console.log('[PRIMEIROS TABS] Erro ao interpretar resposta como JSON. URL:', url);
-        return [];
-      }
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
-        console.log('[PRIMEIROS TABS] Erro de Timeout ao buscar URL:', url);
-        return [];
-      }
-      console.log('[PRIMEIROS TABS] Erro de rede ao buscar URL:', url);
-      return [];
-    }
-  }
-
-  const tabs = [
-    ['Entrada do noivo', 'entrada_noivo'],
-    ['Entrada dos pais', 'entrada_pais'],
-    ['Entrada da noiva', 'entrada_noiva'],
-    ['Entrada das alianças', 'entrada_aliancas'],
-    ['Entrada dos padrinhos', 'entrada_padrinhos'],
-    ['Entrada de plaquinha ou florist', 'floristas'],
-    ['comunhão', 'comunhao'],
-    ['Beijo', 'beijo'],
-    ['Assinaturas', 'assinatura'],
-    ['Saida', 'saida'],
-    ['Cumprimentos', 'cumprimentos'],
-    ['Entrada da Biblia', 'entrada_biblia'],
-    ['Salmo', 'salmo'],
-    ['Santa Ceia', 'santa_ceia'],
-    ['Entrada da sagrada familia', 'entrada_sagrada_familia'],
-    ['Homenagem a falecido', 'homenagem_falecido'],
-    ['Entrada de nossa senhora', 'entrada_nossa_senhora'],
-    ['Aclamação ao Evangelho', 'aclamacao_evangelho'],
-    ['Oração', 'oracao']
-  ]
-
-  const primeirosTabs = tabs.slice(0, limitLoading1);
-  const segundosTabs = tabs.slice(limitLoading1, limitLoading2);
-  const terceirosTabs = tabs.slice(limitLoading2);
-  console.log('Iniciando busca das músicas');
-
-  for (let i = 0; i < primeirosTabs.length; i++) {
-    try {
-      const tab = primeirosTabs[i][0];
-      const key = primeirosTabs[i][1]
-      const url = sheet2JsonUrl + `${sheet}&sheet=${tab}`;
-      const musicas = await fetchWithCors(url);
-      if (musicas && Array.isArray(musicas)) {
-        console.log('[PRIMEIROS TABS] Tab OK:', tab, '- músicas carregadas:', musicas.length);
-        musicasArray = [...musicasArray, ...musicas.slice(1).map(m => [...m, key])]
-      } else {
-        console.log('[PRIMEIROS TABS] Tab sem dados (array vazio) para:', tab);
-      }
-      // Delay de 1 segundo entre requisições para evitar rate limiting
-      if (i < primeirosTabs.length - 1) {
-        await delay();
-      }
-    } catch (_error) {
-      console.log('[PRIMEIROS TABS] Falha ao buscar tab:', primeirosTabs[i][0]);
-      // Delay mesmo em caso de erro para não sobrecarregar
-      if (i < primeirosTabs.length - 1) {
-        await delay();
+  const apiMusics = await fetch('http://app.institutomusicaldanilomenezes.com/api/musics').then(res => res.json());
+  const musicas = []
+  for (const m of apiMusics?.data) {
+    const popularMoment = m?.popular_moment?.split(',') || [];
+    for (const moment of popularMoment) {
+      if (tabs[moment]) {
+        musicas.push({
+          nome: m.name,
+          momento: tabs[moment],
+          descricao: m?.description || '',
+          estilo: m?.style || 'Católico',
+          artista: m.tags,
+          video: m.lead_link,
+          imagem: m.photo ?
+            null
+            // TODO: Adicionar a imagem da música
+            // `http://app.institutomusicaldanilomenezes.com/api/musics/${m.id}/photo` 
+            : null
+        });
       }
     }
   }
-
-  console.log('Músicas encontradas nos primeiros tabs:', musicasArray.length);
-  let musicas = getMusicasfromArray(musicasArray)
-  console.log('Músicas processadas após primeiros tabs:', musicas.length);
-
   loading.className = "loading-invisible";
 
   // Filtros
   const filtroWrapper = document.createElement("div");
   filtroWrapper.className = "filtro-wrapper";
-
   const select = document.createElement("select");
   select.id = "filtro-estilo";
   select.className = "select-filtro";
@@ -144,7 +74,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   opt.value = "";
   opt.textContent = "Selecionar estilo";
   select.appendChild(opt);
-
   let arrayEstilos = []
   const estilosUnicos = [...new Set(musicas.map(m => m.estilo.toUpperCase()))];
   estilosUnicos.forEach(estilo => {
@@ -165,29 +94,23 @@ document.addEventListener("DOMContentLoaded", async function () {
     })
   });
   arrayEstilos = arrayEstilos.sort()
-
   const botaoFiltrar = document.createElement("button");
   botaoFiltrar.textContent = "Filtrar";
   botaoFiltrar.className = "botao-filtrar";
-
   const botaoReset = document.createElement("button");
   botaoReset.textContent = "Mostrar Tudo";
   botaoReset.className = "botao-reset";
-
   const searchTextContainer = document.createElement("div");
   searchTextContainer.className = "search-text-wrapper";
-
   const inputSearchText = document.createElement("input");
   inputSearchText.id = "input-search-text";
   inputSearchText.type = "text"
   inputSearchText.placeholder = "Pesquisar..."
   inputSearchText.className = "input-search-text";
-
   filtroWrapper.appendChild(inputSearchText);
   filtroWrapper.appendChild(select);
   filtroWrapper.appendChild(botaoFiltrar);
   filtroWrapper.appendChild(botaoReset);
-
   containerPrincipal.appendChild(searchTextContainer);
 
   select.addEventListener("change", (e) => {
@@ -202,7 +125,9 @@ document.addEventListener("DOMContentLoaded", async function () {
       select.style.borderColor = '#475569';
     }
   })
+  containerPrincipal.appendChild(filtroWrapper);
 
+  // Events
   inputSearchText.addEventListener("input", (e) => {
     if (select.selectedIndex) select.remove(select.selectedIndex);
     const otherElements = Array.from(momentDiv.children);
@@ -219,8 +144,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     select.style.borderColor = '#475569';
     renderizarMusicas(arrayEstilos, containerPrincipal, filtradas, listaMusicas);
   });
-
-  containerPrincipal.appendChild(filtroWrapper);
 
   botaoFiltrar.addEventListener("click", () => {
     const otherElements = Array.from(momentDiv.children);
@@ -261,6 +184,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   momentDiv.className = "moment-musicas";
   container.appendChild(momentDiv);
 
+  // Renderização dos momentos
   criaBotaoMomento(botaoFiltrar, momentDiv, "ENTRADA DO NOIVO", "entrada_noivo.png", "entrada_noivo")
   criaBotaoMomento(botaoFiltrar, momentDiv, "ENTRADA DOS PAIS", "entrada_pais.png", "entrada_pais")
   criaBotaoMomento(botaoFiltrar, momentDiv, "ENTRADA DOS PADRINHOS", "entrada_padrinhos-scaled.jpg", "entrada_padrinhos")
@@ -280,37 +204,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   criaBotaoMomento(botaoFiltrar, momentDiv, "ASSINATURA", "assinatura-scaled.jpg", "assinatura")
   criaBotaoMomento(botaoFiltrar, momentDiv, "CUMPRIMENTOS", "cumprimentos.jpg", "cumprimentos")
   criaBotaoMomento(botaoFiltrar, momentDiv, "SAÍDA", "saida-scaled.jpg", "saida")
-
   renderizarMusicas(arrayEstilos, containerPrincipal, musicas, listaMusicas);
-
-  // Get another musics
-  const buttons = momentDiv.children
-  Array.from(buttons).slice(limitLoading1).map(el => { el.className = 'loading' })
-
-  console.log('Buscando segundos tabs');
-  try {
-    musicasArray = await getMusicasArray(segundosTabs, sheet2JsonUrl, sheet)
-    let newMusicas = getMusicasfromArray(musicasArray)
-    musicas = [...musicas, ...newMusicas]
-  } catch (error) {
-    console.log('Erro ao buscar segundos tabs');
-    musicasArray = [];
-  }
-  Array.from(buttons).slice(0, limitLoading2).map(el => { el.className = '' })
-  renderizarMusicas(arrayEstilos, containerPrincipal, musicas, listaMusicas);
-
-  console.log('Buscando terceiros tabs');
-  try {
-    musicasArray = await getMusicasArray(terceirosTabs, sheet2JsonUrl, sheet)
-    newMusicas = getMusicasfromArray(musicasArray)
-    musicas = [...musicas, ...newMusicas]
-  } catch (_error) {
-    console.log('Erro ao buscar terceiros tabs');
-    musicasArray = [];
-  }
-  Array.from(buttons).slice(limitLoading2).map(el => { el.className = '' })
-  renderizarMusicas(arrayEstilos, containerPrincipal, musicas, listaMusicas);
-
 });
 
 function renderizarMusicas(arrayEstilos, containerPrincipal, lista, listaMusicas, paginaAtual = 1, itensPorPagina = 14) {
@@ -449,102 +343,6 @@ function criaBotaoMomento(botaoFiltrar, momentDiv, txt, img, id) {
     }
     botaoFiltrar.click();
   });
-}
-
-function getMusicasfromArray(musicasArray) {
-  // TODO: get image from api
-  if (!musicasArray || !Array.isArray(musicasArray)) {
-    return [];
-  }
-  return musicasArray
-    .map(m => {
-      if (!m || !Array.isArray(m)) return null;
-      const lastIndex = m.length - 1
-      return {
-        nome: m?.[0], momento: m?.[lastIndex], descricao: m?.[1], estilo: m?.[2], artista: m?.[4],
-        video: m?.[5] || '', imagem: imageIsValid(m?.[lastIndex - 1]) ? m?.[lastIndex - 1] : ''
-      }
-    })
-    .filter((m) => m && m.nome && m.momento && m.descricao && m.estilo && m.artista)
-}
-
-function imageIsValid(image) {
-  return image && image.startsWith('https://institutomusicaldanilomenezes.com')
-}
-
-async function getMusicasArray(tabs, sheet2JsonUrl, sheet) {
-  let musicasArray = []
-  const corsProxy = 'https://api.allorigins.win/raw?url='
-  
-  // Função auxiliar para delay entre requisições
-  function delay() {
-    return new Promise(resolve => setTimeout(resolve, 500));
-  }
-  
-  // Função auxiliar para fazer requisições através do proxy CORS
-  async function fetchWithCors(url, timeout = 60000) {
-    const proxiedUrl = corsProxy + encodeURIComponent(url);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-    console.log('[TABS ADICIONAIS] Requisição para:', url);
-    try {
-      const response = await fetch(proxiedUrl, {
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        console.log('[TABS ADICIONAIS] Erro HTTP na URL:', url);
-        return [];
-      }
-      
-      const responseText = await response.text();
-      try {
-        const data = JSON.parse(responseText);
-        console.log('[TABS ADICIONAIS] Sucesso. Itens recebidos:', data.length, 'URL:', url);
-        return data;
-      } catch (_parseError) {
-        console.log('[TABS ADICIONAIS] Erro ao interpretar resposta como JSON. URL:', url);
-        return [];
-      }
-    } catch (error) {
-      clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
-        console.log('[TABS ADICIONAIS] Erro de Timeout ao buscar URL:', url);
-        return [];
-      }
-      console.log('[TABS ADICIONAIS] Erro de rede ao buscar URL:', url);
-      return [];
-    }
-  }
-  
-  for (let i = 0; i < tabs.length; i++) {
-    try {
-      const tab = tabs[i][0];
-      const key = tabs[i][1]
-      const url = sheet2JsonUrl + `${sheet}&sheet=${tab}`;
-      const musicas = await fetchWithCors(url);
-      if (musicas && Array.isArray(musicas)) {
-        console.log('[TABS ADICIONAIS] Tab OK:', tab, '- músicas carregadas:', musicas.length);
-        musicasArray = [...musicasArray, ...musicas.slice(1).map(m => [...m, key])]
-      } else {
-        console.log('[TABS ADICIONAIS] Tab sem dados (array vazio) para:', tab);
-      }
-      // Delay de 1 segundo entre requisições para evitar rate limiting
-      if (i < tabs.length - 1) {
-        await delay();
-      }
-    } catch (_error) {
-      console.log('[TABS ADICIONAIS] Falha ao buscar tab:', tabs[i][0]);
-      // Delay mesmo em caso de erro para não sobrecarregar
-      if (i < tabs.length - 1) {
-        await delay();
-      }
-      // Continua para a próxima tab sem quebrar
-    }
-  }
-  return musicasArray
 }
 
 function getFixedIndexFromMusicName(str, len) {
