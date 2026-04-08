@@ -1,0 +1,4 @@
+assets/website/*
+node_modules
+lastIndex.txt
+.env
