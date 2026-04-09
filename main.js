@@ -82,16 +82,19 @@ document.addEventListener("DOMContentLoaded", async function () {
       })
     })
     estiloSplited.forEach(v => {
-      const opt = document.createElement("option");
       const formated = v.trim()
       if (!arrayEstilos.some(el => el === formated))
         arrayEstilos.push(formated)
-      opt.value = formated;
-      opt.textContent = formated;
-      select.appendChild(opt);
     })
   });
   arrayEstilos = arrayEstilos.sort()
+  arrayEstilos = [...new Set(arrayEstilos)]
+  arrayEstilos.forEach(estilo => {
+    const opt = document.createElement("option");
+    opt.value = estilo;
+    opt.textContent = estilo;
+    select.appendChild(opt);
+  })
   const botaoFiltrar = document.createElement("button");
   botaoFiltrar.textContent = "Filtrar";
   botaoFiltrar.className = "botao-filtrar";
