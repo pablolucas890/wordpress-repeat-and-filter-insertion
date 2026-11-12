@@ -40,7 +40,23 @@ document.addEventListener("DOMContentLoaded", async function () {
     'Aclamação ao Evangelho': 'aclamacao_evangelho',
     'Oração': 'oracao'
   }
-  const apiMusics = await fetch('https://app.institutomusicaldanilomenezes.com/api/musics').then(res => res.json());
+  let apiMusics;
+  try {
+    console.log('Buscando API no servidor oficial');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    const res = await fetch('https://app.institutomusicaldanilomenezes.com/api/musics', {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) throw new Error(`API status ${res.status}`);
+    apiMusics = await res.json();
+  } catch (err) {
+    console.warn('Falha ao buscar API, usando fallback do GitHub:', err);
+    const res = await fetch('https://raw.githubusercontent.com/pablolucas890/wordpress-repeat-and-filter-insertion/refs/heads/main/musics.json');
+    const fallback = await res.json();
+    apiMusics = Array.isArray(fallback) ? { data: fallback } : fallback;
+  }
   const musicas = []
   for (const m of apiMusics?.data) {
     const popularMoment = m?.popular_moment?.split(',') || [];
@@ -53,8 +69,10 @@ document.addEventListener("DOMContentLoaded", async function () {
           estilo: m?.style || 'Católico',
           artista: m.tags,
           video: m.lead_link,
-          imagem: m.photo ?
-            `https://app.institutomusicaldanilomenezes.com/api/musics/${m.id}/photo` 
+          imagem: m.photo
+            ? (String(m.photo).startsWith('http')
+              ? m.photo
+              : `https://app.institutomusicaldanilomenezes.com/api/musics/${m.id}/photo`)
             : null
         });
       }
